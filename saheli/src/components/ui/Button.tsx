@@ -3,6 +3,7 @@ import type { ComponentChildren, JSX } from 'preact';
 interface ButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
   children: ComponentChildren;
   fullWidth?: boolean;
 }

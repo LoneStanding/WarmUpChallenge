@@ -25,6 +25,7 @@ export interface Consultation {
     returnCriteria?: string;
   };
   status: 'draft' | 'referred' | 'resolved';
+  userId: string;
 }
 
 export class SaheliDatabase extends Dexie {
@@ -32,8 +33,8 @@ export class SaheliDatabase extends Dexie {
 
   constructor() {
     super('SaheliDB');
-    this.version(1).stores({
-      consultations: '++id, date, severity, status'
+    this.version(2).stores({
+      consultations: '++id, date, severity, status, userId'
     });
   }
 }

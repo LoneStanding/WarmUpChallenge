@@ -4,6 +4,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import type { ExtractedClinicalData } from '../lib/ai';
 import { AlertTriangle, FileText, CheckCircle2 } from 'lucide-preact';
+import { NearestHospital } from '../components/NearestHospital';
 
 interface DecisionOutputProps {
   data: ExtractedClinicalData;
@@ -14,21 +15,24 @@ interface DecisionOutputProps {
 export function DecisionOutput({ data, onGenerateReferral, onMarkResolved }: DecisionOutputProps) {
   const isRefer = data.actionType === 'refer';
   const hasDangerSigns = data.dangerSigns && data.dangerSigns.length > 0;
+  
+  // Deduplicate array strings just in case the AI generated repetitive outputs
+  const uniqueSteps = Array.from(new Set(data.actionSteps || []));
 
   return (
     <div class="flex flex-col h-full space-y-3 pb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
-      {/* Patient Summary Bar */}
-      <div class="flex items-center justify-between px-1">
-        <div>
-          <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {data.patientInitials || 'Patient'}
+      {/* Symptoms Summary Bar */}
+      <div class="flex items-start justify-between px-1 gap-3">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-snug">
+            {(data.symptoms || []).join(' · ') || 'No symptoms recorded'}
           </h2>
-          <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">
-            {data.age ? `${data.age} yrs` : 'Age N/A'} • {data.sex || 'Unknown sex'}
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5 uppercase tracking-wide">
+            {data.protocolMatched || 'General Assessment'}
           </p>
         </div>
-        <Badge variant={data.severity} class="text-sm px-3 py-1 shadow-sm">
+        <Badge variant={data.severity} class="text-sm px-3 py-1 shadow-sm shrink-0">
           {data.severity}
         </Badge>
       </div>
@@ -50,7 +54,7 @@ export function DecisionOutput({ data, onGenerateReferral, onMarkResolved }: Dec
             <div class="ml-3">
               <h3 class="text-sm font-bold text-red-800 dark:text-red-400 uppercase tracking-wider mb-1">Danger Signs</h3>
               <ul class="list-disc pl-4 text-sm text-red-700 dark:text-red-300 font-medium space-y-0.5">
-                {data.dangerSigns.map((sign) => <li key={sign}>{sign}</li>)}
+                {(data.dangerSigns || []).map((sign) => <li key={sign}>{sign}</li>)}
               </ul>
             </div>
           </div>
@@ -69,7 +73,7 @@ export function DecisionOutput({ data, onGenerateReferral, onMarkResolved }: Dec
         </div>
         
         <ol class="space-y-3 mt-4">
-          {data.actionSteps.map((step, idx) => (
+          {uniqueSteps.map((step, idx) => (
             <li key={idx} class="flex gap-3 text-slate-800 dark:text-slate-200 font-medium text-15px">
               <span class="flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-500">
                 {idx + 1}
@@ -88,10 +92,15 @@ export function DecisionOutput({ data, onGenerateReferral, onMarkResolved }: Dec
         )}
       </Card>
 
+      {/* Nearest Hospital Map (Only for severity above 'Mild') */}
+      {data.severity?.toLowerCase() !== 'mild' && (
+        <NearestHospital />
+      )}
+
       {/* Structured Data Summary (Collapsible or compact) */}
       <Card class="bg-slate-50 dark:bg-slate-800/40">
         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Extracted Data</h3>
-        <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold">Symptoms:</span> {data.symptoms.join(', ')}</p>
+        <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold">Symptoms:</span> {(data.symptoms || []).join(', ')}</p>
         {data.duration && <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold">Duration:</span> {data.duration}</p>}
       </Card>
 

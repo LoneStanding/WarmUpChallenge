@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import { App } from './app.tsx';
+import { AuthProvider } from './lib/auth-context';
 import './index.css';
 
 // Register Service Worker for PWA
@@ -15,4 +16,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-render(<App />, document.getElementById('app') as HTMLElement);
+render(
+  <AuthProvider>
+    <App />
+  </AuthProvider>,
+  document.getElementById('app') as HTMLElement
+);
