@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 const { Firestore } = require('@google-cloud/firestore');
@@ -221,6 +222,18 @@ app.get('/api/consultations/:userId', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
+
+// ── Serve built Vite frontend (for production / Cloud Run) ──────────────────
+// The dist folder is one level up from backend/ when running in the container
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Catch-all: return index.html for any non-API route (SPA routing support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`Saheli secure backend running on port ${PORT}`);
+  console.log(`Saheli backend running on port ${PORT}`);
+  console.log(`Serving frontend from: ${distPath}`);
 });

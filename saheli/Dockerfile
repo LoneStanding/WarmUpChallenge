@@ -1,23 +1,32 @@
+# ── Stage 1: Build the Vite frontend ─────────────────────────────────────────
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# Install dependencies
+# Install frontend dependencies
 COPY package*.json ./
-# Use legacy peer deps due to the vite-pwa plugin version strictness
 RUN npm install --legacy-peer-deps
 
-# Build the PWA
+# Copy all source files and build
 COPY . .
 RUN npm run build
 
-# Serve with lightweight Nginx
-FROM nginx:alpine
-# Copy custom Nginx configuration to listen on port 8080 and handle SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# ── Stage 2: Production Node.js server ───────────────────────────────────────
+FROM node:20-slim AS runner
+WORKDIR /app
 
-# Copy build artifacts to Nginx html directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Install backend dependencies only
+COPY backend/package*.json ./backend/
+RUN cd backend && npm install --production
 
-# Cloud Run expects 8080 by default
+# Copy compiled backend
+COPY backend/ ./backend/
+
+# Copy the built frontend from Stage 1
+COPY --from=builder /app/dist ./dist
+
+# Cloud Run sets PORT env var; default to 8080
+ENV PORT=8080
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+
+# Start the backend (which will also serve the frontend)
+CMD ["node", "backend/server.js"]
